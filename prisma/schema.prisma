@@ -1,0 +1,82 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+  datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+model Question {
+  id               String           @id @default(uuid())
+  examType         String
+  subject          String
+  topic            String
+  year             Int
+  questionText     String           @db.Text
+  questionImage    String?
+  options          Json
+  correctOption    String
+  explanation      String           @db.Text
+  explanationImage String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  
+  answers          PracticeAnswer[]
+
+  @@index([subject, year])
+  @@index([subject, topic])
+  @@map("questions")
+}
+
+model PracticeSession {
+  id              String           @id @default(uuid())
+  userId          String
+  subjects        String[]
+  durationMinutes Int
+  selectedYear    String           @default("random")
+  status          SessionStatus    @default(IN_PROGRESS)
+  score           Int              @default(0)
+  percentage      Float            @default(0.0)
+  totalQuestions  Int              @default(0)
+  attemptedCount  Int              @default(0)
+  correctCount    Int              @default(0)
+  incorrectCount  Int              @default(0)
+  unansweredCount Int              @default(0)
+  startedAt       DateTime         @default(now())
+  submittedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  answers         PracticeAnswer[]
+
+  @@index([userId])
+  @@map("practice_sessions")
+}
+
+model PracticeAnswer {
+  id             String          @id @default(uuid())
+  sessionId      String
+  questionId     String
+  selectedOption String?
+  correctOption  String
+  isCorrect      Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  session        PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@map("practice_answers")
+}
