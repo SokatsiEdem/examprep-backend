@@ -1,69 +1,21 @@
-// const startCBT = (req, res) => {
-//     res.status(200).json({
-//         success: true,
-//         message: "CBT started successfully"
-//     });
-// };
+import * as cbtService from "../services/cbt.service.js";
 
-// const submitCBT = (req, res) => {
-//     res.status(200).json({
-//         success: true,
-//         message: "CBT submitted successfully"
-//     });
-// };
-
-// const getResult = (req, res) => {
-//     res.status(200).json({
-//         success: true,
-//         message: "CBT result retrieved successfully"
-//     });
-// };
-
-// const reviewCBT = (req, res) => {
-//     res.status(200).json({
-//         success: true,
-//         message: "CBT review retrieved successfully"
-//     });
-// };
-
-// module.exports = {
-//     startCBT,
-//     submitCBT,
-//     getResult,
-//     reviewCBT
-// };
-
-
-const {
-    startExam,
-    submitExam,
-    getExamResult,
-    reviewExam
-} = require("../services/cbt.service");
-
-const startCBT = (req, res) => {
-    const result = startExam();
+export const startCBT = (req, res) => {
+    const result = cbtService.startCBT();
     res.status(200).json(result);
 };
 
-const submitCBT = (req, res) => {
-    const result = submitExam();
+export const submitCBT = (req, res) => {
+    const result = cbtService.submitCBT();
     res.status(200).json(result);
 };
 
-const getResult = (req, res) => {
-    const result = getExamResult(req.params.id);
+export const getResult = (req, res) => {
+    const result = cbtService.getResult(req.params.id);
     res.status(200).json(result);
 };
 
-const reviewCBT = (req, res) => {
-    const result = reviewExam(req.params.id);
+export const getReview = (req, res) => {
+    const result = cbtService.getReview(req.params.id);
     res.status(200).json(result);
-};
-
-module.exports = {
-    startCBT,
-    submitCBT,
-    getResult,
-    reviewCBT
 };

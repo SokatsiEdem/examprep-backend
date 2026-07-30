@@ -1,25 +1,25 @@
-const startExam = () => {
+export const startExam = () => {
     return {
         success: true,
         message: " CBT started successfully"
     };
 };
 
-const submitExam = () => {
+export const submitExam = () => {
     return {
         success: true,
         message: " CBT submitted successfully"
     };
 };
 
-const getExamResult = () => {
+export const getExamResult = () => {
     return {
         success: true,
         score: 80
     };
 };
 
-const reviewExam = () => {
+export const reviewExam = () => {
     return {
         success: true,
         message: "CBT review loaded successfully"
