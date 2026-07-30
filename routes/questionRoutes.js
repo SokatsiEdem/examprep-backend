@@ -1,10 +1,15 @@
-const express = require('express');
+import express from "express";
+import { getQuestions, searchQuestions, getQuestionById,} from "../controllers/questions/questionController.js";
+import {validateQuestionQuery,validateSearchQuery,} from "../validators/practiceValidator.js"
+import validateRequest from "../middleware/validateRequest.js";
+
 const router = express.Router();
-const questionController = require('../controllers/questions/questionController');
-const { validateQuestionQuery, validateSearchQuery } = require('../validators/practiceValidator');
+// Get all questions
+router.get("/",validateQuestionQuery,validateRequest,getQuestions);
+// Search questions
+router.get("/search",validateSearchQuery,validateRequest,searchQuestions);
 
-router.get('/', validateQuestionQuery, questionController.getQuestions);
-router.get('/search', validateSearchQuery, questionController.searchQuestions);
-router.get('/:id', questionController.getQuestionById);
+// Get a question by ID
+router.get("/:id",validateQuestionId,validateRequest,getQuestionById);
 
-module.exports = router;
+export default router;

@@ -1,31 +1,33 @@
-const prisma = require('../config/prisma');
+import prisma from "../config/prisma.js";
 
 /**
- * Fetch a paginated list of questions with optional subject and year filters.
+ * Fetch all questions with pagination and filters
  */
-exports.fetchQuestions = async ({ subject, year, page = 1, limit = 20 }) => {
-  console.log(`[QuestionService] Fetching questions - Subject: ${subject || 'All'}, Year: ${year || 'All'}, Page: ${page}`);
-
-  // Build dynamic SQL filter object
+export const fetchQuestions = async ({
+  subject,
+  year,
+  page = 1,
+  limit = 20,
+}) => {
   const where = {};
-  if (subject) where.subject = subject.toLowerCase();
+
+  if (subject) where.subject = subject;
   if (year) where.year = Number(year);
 
-  // Calculate skip offset for pagination
   const skip = (Number(page) - 1) * Number(limit);
 
-  // Run database query and total count in parallel for speed
   const [questions, total] = await Promise.all([
     prisma.question.findMany({
       where,
       skip,
       take: Number(limit),
-      orderBy: { createdAt: 'desc' },
+      orderBy: {
+        createdAt: "desc",
+      },
     }),
+
     prisma.question.count({ where }),
   ]);
-
-  console.log(`[QuestionService] Found ${questions.length} questions out of ${total} total matches.`);
 
   return {
     questions,
@@ -38,33 +40,71 @@ exports.fetchQuestions = async ({ subject, year, page = 1, limit = 20 }) => {
 };
 
 /**
- * Perform a case-insensitive search across question text.
+ * Search questions
  */
-exports.searchQuestions = async (queryText) => {
-  console.log(`[QuestionService] Searching question text for query: "${queryText}"`);
-
-  const results = await prisma.question.findMany({
+export const searchQuestions = async (searchTerm) => {
+  return await prisma.question.findMany({
     where: {
-      questionText: { contains: queryText, mode: 'insensitive' },
+      questionText: {
+        contains: searchTerm,
+        mode: "insensitive",
+      },
     },
-    take: 30, // Cap results at 30 to prevent overloading responses
+    take: 30,
   });
-
-  console.log(`[QuestionService] Search returned ${results.length} matching questions.`);
-  return results;
 };
 
 /**
- * Retrieve a single question by its unique UUID.
+ * Get question by ID
  */
-exports.getQuestionById = async (id) => {
-  console.log(`[QuestionService] Looking up question ID: ${id}`);
-  
-  const question = await prisma.question.findUnique({ where: { id } });
-  
+export const getQuestionById = async (id) => {
+  return await prisma.question.findUnique({
+    where: {
+      id,
+    },
+  });
+};
+
+/**
+ * Create a new question
+ */
+export const createQuestion = async (data) => {
+  return await prisma.question.create({
+    data,
+  });
+};
+
+/**
+ * Update question
+ */
+export const updateQuestion = async (id, data) => {
+  const question = await prisma.question.findUnique({
+    where: { id },
+  });
+
   if (!question) {
-    console.log(`[QuestionService] Question ID ${id} was not found.`);
+    throw new Error("Question not found.");
   }
 
-  return question;
+  return await prisma.question.update({
+    where: { id },
+    data,
+  });
+};
+
+/**
+ * Delete question
+ */
+export const deleteQuestion = async (id) => {
+  const question = await prisma.question.findUnique({
+    where: { id },
+  });
+
+  if (!question) {
+    throw new Error("Question not found.");
+  }
+
+  return await prisma.question.delete({
+    where: { id },
+  });
 };

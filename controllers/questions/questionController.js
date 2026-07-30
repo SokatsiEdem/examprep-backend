@@ -1,31 +1,98 @@
-const questionService = require('../../services/questionService');
+import * as questionService from "../services/question.service.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 
-exports.getQuestions = async (req, res, next) => {
-  try {
-    const data = await questionService.fetchQuestions(req.query);
-    res.status(200).json({ success: true, data });
-  } catch (error) {
-    next(error);
-  }
-};
+/**
+ * @desc Get all questions
+ * @route GET /api/questions
+ * @access Public
+ */
+export const getQuestions = asyncHandler(async (req, res) => {
+  const data = await questionService.fetchQuestions(req.query);
 
-exports.searchQuestions = async (req, res, next) => {
-  try {
-    const results = await questionService.searchQuestions(req.query.q);
-    res.status(200).json({ success: true, data: results });
-  } catch (error) {
-    next(error);
-  }
-};
+  res.status(200).json({
+    success: true,
+    data,
+  });
+});
 
-exports.getQuestionById = async (req, res, next) => {
-  try {
-    const question = await questionService.getQuestionById(req.params.id);
-    if (!question) {
-      return res.status(404).json({ success: false, message: 'Question not found' });
-    }
-    res.status(200).json({ success: true, data: question });
-  } catch (error) {
-    next(error);
+/**
+ * @desc Search questions
+ * @route GET /api/questions/search?q=
+ * @access Public
+ */
+export const searchQuestions = asyncHandler(async (req, res) => {
+  const results = await questionService.searchQuestions(req.query.q);
+
+  res.status(200).json({
+    success: true,
+    data: results,
+  });
+});
+
+/**
+ * @desc Get question by ID
+ * @route GET /api/questions/:id
+ * @access Public
+ */
+export const getQuestionById = asyncHandler(async (req, res) => {
+  const question = await questionService.getQuestionById(req.params.id);
+
+  if (!question) {
+    return res.status(404).json({
+      success: false,
+      message: "Question not found.",
+    });
   }
-};
+
+  res.status(200).json({
+    success: true,
+    data: question,
+  });
+});
+
+/**
+ * @desc Create a new question
+ * @route POST /api/questions
+ * @access Admin
+ */
+export const createQuestion = asyncHandler(async (req, res) => {
+  const question = await questionService.createQuestion(req.body);
+
+  res.status(201).json({
+    success: true,
+    message: "Question created successfully.",
+    data: question,
+  });
+});
+
+/**
+ * @desc Update a question
+ * @route PATCH /api/questions/:id
+ * @access Admin
+ */
+export const updateQuestion = asyncHandler(async (req, res) => {
+  const question = await questionService.updateQuestion(
+    req.params.id,
+    req.body
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Question updated successfully.",
+    data: question,
+  });
+});
+
+/**
+ * @desc Delete a question
+ * @route DELETE /api/questions/:id
+ * @access Admin
+ */
+export const deleteQuestion = asyncHandler(async (req, res) => {
+  await questionService.deleteQuestion(req.params.id);
+
+  res.status(200).json({
+    success: true,
+    message: "Question deleted successfully.",
+  });
+});

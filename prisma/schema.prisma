@@ -3,8 +3,9 @@
 
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
-  datasource db {
+datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -17,23 +18,34 @@ enum SessionStatus {
   ABANDONED
 }
 
+enum ExamType {
+  JAMB
+  WAEC
+  NECO
+  GCE
+}
+
 model Question {
-  id               String           @id @default(uuid())
-  examType         String
-  subject          String
-  topic            String
-  year             Int
-  questionText     String           @db.Text
+  id String @id @default(uuid())
+
+  examType ExamType
+  subject  String
+  topic    String
+  year     Int
+
+  questionText     String  @db.Text
   questionImage    String?
   options          Json
   correctOption    String
-  explanation      String           @db.Text
+  explanation      String  @db.Text
   explanationImage String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
 
-  answers          PracticeAnswer[]
-  bookmarks        Bookmark[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  answers     PracticeAnswer[]
+  examAnswers ExamAnswer[]
+  bookmarks   Bookmark[]
 
   @@index([subject, year])
   @@index([subject, topic])
@@ -41,54 +53,57 @@ model Question {
 }
 
 model PracticeSession {
-  id              String           @id @default(uuid())
+  id              String        @id @default(uuid())
   userId          String
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   subjects        String[]
   durationMinutes Int
-  selectedYear    String           @default("random")
-  status          SessionStatus    @default(IN_PROGRESS)
-  score           Int              @default(0)
-  percentage      Float            @default(0.0)
-  totalQuestions  Int              @default(0)
-  attemptedCount  Int              @default(0)
-  correctCount    Int              @default(0)
-  incorrectCount  Int              @default(0)
-  unansweredCount Int              @default(0)
-  startedAt       DateTime         @default(now())
+  selectedYear    String        @default("random")
+  status          SessionStatus @default(IN_PROGRESS)
+  score           Int           @default(0)
+  percentage      Float         @default(0.0)
+  totalQuestions  Int           @default(0)
+  attemptedCount  Int           @default(0)
+  correctCount    Int           @default(0)
+  incorrectCount  Int           @default(0)
+  unansweredCount Int           @default(0)
+  startedAt       DateTime      @default(now())
   submittedAt     DateTime?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 
-  answers         PracticeAnswer[]
+  answers PracticeAnswer[]
 
   @@index([userId])
   @@map("practice_sessions")
 }
 
 model PracticeAnswer {
-  id             String          @id @default(uuid())
+  id             String   @id @default(uuid())
   sessionId      String
   questionId     String
   selectedOption String?
   correctOption  String
-  isCorrect      Boolean         @default(false)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  isCorrect      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  session        PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  session  PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([sessionId, questionId])
   @@map("practice_answers")
 }
-  model Bookmark {
+
+model Bookmark {
   id         String   @id @default(uuid())
   userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   questionId String
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   @@unique([userId, questionId])
   @@index([userId])
@@ -97,14 +112,74 @@ model PracticeAnswer {
 }
 
 model UserSetting {
-  id                    String   @id @default(uuid())
-  userId                String   @unique
-  notificationsEnabled  Boolean  @default(true)
-  preferredExamType     String?
-  preferredSubjects     String[]
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationsEnabled Boolean  @default(true)
+  preferredExamType    String?
+  preferredSubjects    String[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   @@index([userId])
   @@map("user_settings")
+}
+
+model ExamAnswer {
+  id String @id @default(uuid())
+
+  examId     String
+  questionId String
+
+  selectedOption String?
+  correctOption  String
+  isCorrect      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, questionId])
+  @@map("exam_answers")
+}
+
+model User {
+  id         String  @id @default(uuid())
+  fullName   String
+  email      String  @unique
+  password   String
+  role       String  @default("STUDENT")
+  isVerified Boolean @default(false)
+
+  bookmarks Bookmark[]
+  practices PracticeSession[]
+  exams     Exam[]
+  settings  UserSetting?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Exam {
+  id       String        @id @default(uuid())
+  userId   String
+  subject  String
+  year     Int?
+  duration Int
+  status   SessionStatus @default(IN_PROGRESS)
+  score    Int           @default(0)
+
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
+
+  @@index([userId])
+  @@map("exams")
 }
