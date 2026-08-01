@@ -1,4 +1,4 @@
-const asyncHandler = (handler) => {
+export const asyncHandler = (handler) => {
   return async (req, res, next) => {
     try {
       await handler(req, res, next);
@@ -8,4 +8,4 @@ const asyncHandler = (handler) => {
   };
 };
 
-module.exports = asyncHandler;
+export default asyncHandler;

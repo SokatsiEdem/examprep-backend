@@ -1,0 +1,350 @@
+import prisma from "../config/prisma.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import crypto from "crypto";
+import generateToken from "../utils/generateToken.js";
+
+
+/**
+ * Register User
+ */
+export const register = async ({
+  fullName,
+  email,
+  password,
+}) => {
+  const existingUser = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (existingUser) {
+    throw new Error("Email already exists.");
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 12);
+
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+
+  const user = await prisma.user.create({
+    data: {
+      fullName,
+      email,
+      password: hashedPassword,
+      verificationToken,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+    },
+  });
+
+  return user;
+};
+
+/**
+ * Login
+ */
+export const login = async ({
+  email,
+  password,
+}) => {
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new Error("Invalid credentials.");
+  }
+
+  const isMatch = await bcrypt.compare(
+    password,
+    user.password
+  );
+
+  if (!isMatch) {
+    throw new Error("Invalid credentials.");
+  }
+
+  const token = generateToken(user.id);
+
+  return {
+    token,
+    user: {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      role: user.role,
+    },
+  };
+};
+
+/**
+ * Logout
+ */
+export const logout = async () => {
+  return true;
+};
+
+/**
+ * Get Profile
+ */
+export const getProfile = async (userId) => {
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+      isVerified: true,
+      createdAt: true,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  return user;
+};
+
+/**
+ * Update Profile
+ */
+export const updateProfile = async (
+  userId,
+  payload
+) => {
+
+  return prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      fullName: payload.fullName,
+      email: payload.email,
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      role: true,
+    },
+  });
+};
+
+/**
+ * Change Password
+ */
+export const changePassword = async (
+  userId,
+  {
+    currentPassword,
+    newPassword,
+  }
+) => {
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
+
+  const validPassword = await bcrypt.compare(
+    currentPassword,
+    user.password
+  );
+
+  if (!validPassword) {
+    throw new Error("Current password is incorrect.");
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    newPassword,
+    12
+  );
+
+  await prisma.user.update({
+    where: {
+      id: userId,
+    },
+    data: {
+      password: hashedPassword,
+    },
+  });
+
+  return true;
+};
+
+/**
+ * Forgot Password
+ */
+export const forgotPassword = async (
+  email
+) => {
+
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  const token = crypto.randomBytes(32).toString("hex");
+
+  await prisma.user.update({
+    where: {
+      email,
+    },
+    data: {
+      resetPasswordToken: token,
+    },
+  });
+
+  // TODO:
+  // Send Email
+
+  return token;
+};
+
+/**
+ * Reset Password
+ */
+export const resetPassword = async ({
+  token,
+  password,
+}) => {
+
+  const user = await prisma.user.findFirst({
+    where: {
+      resetPasswordToken: token,
+    },
+  });
+
+  if (!user) {
+    throw new Error("Invalid token.");
+  }
+
+  const hashedPassword = await bcrypt.hash(
+    password,
+    12
+  );
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      password: hashedPassword,
+      resetPasswordToken: null,
+    },
+  });
+
+  return true;
+};
+
+/**
+ * Verify Email
+ */
+export const verifyEmail = async (
+  token
+) => {
+
+  const user = await prisma.user.findFirst({
+    where: {
+      verificationToken: token,
+    },
+  });
+
+  if (!user) {
+    throw new Error("Invalid verification token.");
+  }
+
+  await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      isVerified: true,
+      verificationToken: null,
+    },
+  });
+
+  return true;
+};
+
+/**
+ * Refresh Token
+ */
+export const refreshToken = async (
+  refreshToken
+) => {
+
+  const payload = jwt.verify(
+    refreshToken,
+    process.env.JWT_SECRET
+  );
+
+  return {
+    accessToken: generateToken(payload.id),
+  };
+};
+
+/**
+ * Get user settings
+ */
+export const getSettings = async (userId) => {
+  let settings = await prisma.userSetting.findUnique({
+    where: {
+      userId,
+    },
+  });
+
+  // Create default settings if none exist
+  if (!settings) {
+    settings = await prisma.userSetting.create({
+      data: {
+        userId,
+      },
+    });
+  }
+
+  return settings;
+};
+
+/**
+ * Save/Update settings
+ */
+export const updateSettings = async (userId, payload) => {
+  const {
+    preferredExamType,
+    preferredSubjects,
+    notificationsEnabled,
+  } = payload;
+
+  return prisma.userSetting.upsert({
+    where: {
+      userId,
+    },
+
+    update: {
+      preferredExamType,
+      preferredSubjects,
+      notificationsEnabled,
+    },
+
+    create: {
+      userId,
+      preferredExamType,
+      preferredSubjects,
+      notificationsEnabled,
+    },
+  });
+};

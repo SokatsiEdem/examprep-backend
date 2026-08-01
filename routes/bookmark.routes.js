@@ -1,31 +1,20 @@
-const express = require("express");
+import express from "express";
+import {createBookmark,getBookmarks,deleteBookmark,deleteBookmarkByQuestion,} from "../controllers/bookmark.controller.js";
+import {createBookmarkValidator,validateBookmarkId,validateQuestionId,} from "../validators/bookmark.validator.js";
+import validateRequest from "../middleware/validateRequest.js";
+import { protect } from "../middleware/auth.middleware.js";
+
 const router = express.Router();
 
-const bookmarkController = require("../controllers/bookmark.controller");
-const {
-  createBookmarkValidator,
-} = require("../validators/bookmark.validator");
+// Protect all bookmark routes
+router.use(protect);
+// Create bookmark
+router.post("/",createBookmarkValidator,validateRequest,createBookmark);
+// Get all bookmarks
+router.get("/", getBookmarks);
+// Delete bookmark by bookmark ID
+router.delete("/:id",validateBookmarkId,validateRequest,deleteBookmark);
+// Delete bookmark by question ID
+router.delete( "/question/:questionId",validateQuestionId,validateRequest,deleteBookmarkByQuestion);
 
-const { validationResult } = require("express-validator");
-
-const validate = (req, res, next) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(400).json({
-      success: false,
-      errors: errors.array(),
-    });
-  }
-
-  next();
-};
-
-router.post(
-  "/",
-  createBookmarkValidator,
-  validate,
-  bookmarkController.createBookmark
-);
-
-module.exports = router;
+export default router;

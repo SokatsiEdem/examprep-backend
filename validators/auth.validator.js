@@ -1,0 +1,79 @@
+import { body } from "express-validator";
+
+export const registerValidator = [
+  body("fullName")
+    .trim()
+    .notEmpty()
+    .withMessage("Full name is required"),
+
+  body("email")
+    .isEmail()
+    .normalizeEmail()
+    .withMessage("Valid email is required"),
+
+  body("password")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters"),
+];
+
+export const loginValidator = [
+  body("email")
+    .isEmail()
+    .normalizeEmail(),
+
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required"),
+];
+
+export const forgotPasswordValidator = [
+  body("email")
+    .isEmail()
+    .normalizeEmail(),
+];
+
+export const resetPasswordValidator = [
+  body("token").notEmpty(),
+
+  body("password")
+    .isLength({ min: 6 }),
+];
+
+export const changePasswordValidator = [
+  body("currentPassword")
+    .notEmpty(),
+
+  body("newPassword")
+    .isLength({ min: 6 }),
+];
+
+export const updateProfileValidator = [
+  body("fullName")
+    .optional()
+    .trim(),
+
+  body("email")
+    .optional()
+    .isEmail()
+    .normalizeEmail(),
+];
+
+export const updateSettingsValidator = [
+  body("preferredExamType")
+    .optional()
+    .isIn(["JAMB", "WAEC", "NECO", "GCE"]),
+
+  body("preferredSubjects")
+    .optional()
+    .isArray({ min: 1, max: 4 })
+    .withMessage("Select between 1 and 4 subjects"),
+
+  body("preferredSubjects.*")
+    .optional()
+    .isString()
+    .trim(),
+
+  body("notificationsEnabled")
+    .optional()
+    .isBoolean(),
+];

@@ -1,19 +1,21 @@
-const { body } = require("express-validator");
+import { body, param } from "express-validator";
 
-const createBookmarkValidator = [
-  body("userId")
-    .notEmpty()
-    .withMessage("User ID is required.")
-    .isString()
-    .withMessage("User ID must be a string."),
-
+export const createBookmarkValidator = [
   body("questionId")
     .notEmpty()
     .withMessage("Question ID is required.")
-    .isString()
-    .withMessage("Question ID must be a string."),
+    .isUUID()
+    .withMessage("Question ID must be a valid UUID."),
 ];
 
-module.exports = {
-  createBookmarkValidator,
-};
+export const validateBookmarkId = [
+  param("id")
+    .isUUID()
+    .withMessage("Invalid bookmark ID."),
+];
+
+export const validateQuestionId = [
+  param("questionId")
+    .isUUID()
+    .withMessage("Invalid question ID."),
+];
