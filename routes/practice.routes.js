@@ -1,7 +1,7 @@
 import express from "express";
-import { startPractice,submitPractice,getPracticeHistory,getPracticeById,} from "../controllers/practice/practiceController.js";
-import {validateStartPractice,validateSubmitPractice,} from "../validators/practiceValidator.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { startPractice,submitPractice,getPracticeHistory,getPracticeById,} from "../controllers/practice.controller.js";
+import {validateStartPractice,validateSubmitPractice,} from "../validators/practice.validator.js";
+import { protect } from "../middleware/auth.middleware.js";
 import validateRequest from "../middleware/validateRequest.js";
 
 const router = express.Router();

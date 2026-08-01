@@ -1,6 +1,6 @@
 import express from "express";
 import {startCBT, saveAnswer,submitCBT,getExam,getResult,reviewCBT,getExamHistory,} from "../controllers/cbt.controller.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/auth.middleware.js";
 import validateRequest from "../middleware/validateRequest.js";
 import {validateStartCBT,validateSaveAnswer,validateSubmitCBT,validateExamId,} from "../validators/cbt.validator.js";
 

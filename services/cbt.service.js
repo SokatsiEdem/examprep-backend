@@ -1,215 +1,273 @@
 import prisma from "../config/prisma.js";
 
 /**
- * Start a new CBT exam
+ * Shuffle an array
  */
-export const startExam = async (userId, payload) => {
-  return await prisma.exam.create({
-    data: {
-      userId,
-      subject: payload.subject,
-      duration: payload.duration,
-      year: payload.year,
-      status: "IN_PROGRESS",
-      startedAt: new Date(),
-    },
-  });
+const shuffleArray = (array) => {
+  return [...array].sort(() => Math.random() - 0.5);
 };
 
 /**
- * Auto-save an answer
+ * Validate user settings
  */
-export const saveAnswer = async (userId, examId, payload) => {
-  // Ensure exam exists and belongs to the user
-  const exam = await prisma.exam.findFirst({
+const getUserSettings = async (userId) => {
+  const settings = await prisma.userSetting.findUnique({
     where: {
-      id: examId,
       userId,
     },
   });
 
-  if (!exam) {
-    throw new Error("Exam not found.");
+  if (!settings) {
+    throw new Error("User settings not found.");
   }
 
-  return await prisma.examAnswer.upsert({
-    where: {
-      examId_questionId: {
-        examId,
-        questionId: payload.questionId,
+  if (
+    !settings.preferredSubjects ||
+    settings.preferredSubjects.length === 0
+  ) {
+    throw new Error(
+      "Please select your preferred subjects first."
+    );
+  }
+
+  return settings;
+};
+
+/**
+ * Fetch exam questions
+ */
+const getQuestions = async ({
+  subject,
+  year,
+  limit,
+  examType,
+}) => {
+  const where = {
+    subject,
+  };
+
+  if (year && year !== "random") {
+    where.year = Number(year);
+  }
+
+  if (examType) {
+    where.examType = examType;
+  }
+
+  const questions = await prisma.question.findMany({
+    where,
+  });
+
+  if (questions.length === 0) {
+    throw new Error(
+      `No questions found for ${subject}.`
+    );
+  }
+
+  return shuffleArray(questions).slice(0, limit);
+};
+
+/**
+ * Start CBT Exam
+ */
+export const startExam = async (
+  userId,
+  payload
+) => {
+
+  const settings = await getUserSettings(userId);
+
+  const subject =
+    payload.subject ||
+    settings.preferredSubjects[0];
+
+  const year =
+    payload.year || "random";
+
+  const duration =
+    payload.duration || 60;
+
+  const totalQuestions =
+    payload.totalQuestions || 60;
+
+  const questions =
+    await getQuestions({
+      subject,
+      year,
+      limit: totalQuestions,
+      examType:
+        settings.preferredExamType,
+    });
+
+  return await prisma.$transaction(async (tx) => {
+
+    // Create exam session
+    const exam =
+      await tx.exam.create({
+
+        data: {
+          userId,
+          subject,
+          year:
+            year === "random"
+              ? null
+              : Number(year),
+
+          duration,
+
+          status: "IN_PROGRESS",
+        },
+
+      });
+
+    // Pre-create answer rows
+    await tx.examAnswer.createMany({
+
+      data: questions.map((question) => ({
+
+        examId: exam.id,
+
+        questionId: question.id,
+
+        selectedOption: null,
+
+        correctOption:
+          question.correctOption,
+
+      })),
+
+    });
+
+    return {
+
+      examId: exam.id,
+
+      subject,
+
+      year,
+
+      duration,
+
+      totalQuestions:
+        questions.length,
+
+      startedAt:
+        exam.startedAt,
+
+      questions: questions.map((q) => ({
+
+        id: q.id,
+
+        subject: q.subject,
+
+        topic: q.topic,
+
+        year: q.year,
+
+        questionText:
+          q.questionText,
+
+        questionImage:
+          q.questionImage,
+
+        options:
+          q.options,
+
+      })),
+
+    };
+
+  });
+
+};
+
+/**
+ * Save/Auto-save an Answer
+ */
+export const saveAnswer = async (
+  userId,
+  examId,
+  payload
+) => {
+
+  const {
+    questionId,
+    selectedOption,
+  } = payload;
+
+  return await prisma.$transaction(async (tx) => {
+
+    // Verify exam belongs to user
+    const exam = await tx.exam.findFirst({
+      where: {
+        id: examId,
+        userId,
       },
-    },
-    update: {
-      selectedOption: payload.selectedOption,
-    },
-    create: {
-      examId,
-      questionId: payload.questionId,
-      selectedOption: payload.selectedOption,
-    },
-  });
-};
+    });
 
-/**
- * Submit exam
- */
-export const submitExam = async (userId, examId, answers) => {
-  const exam = await prisma.exam.findFirst({
-    where: {
-      id: examId,
-      userId,
-    },
-  });
+    if (!exam) {
+      throw new Error("Exam not found.");
+    }
 
-  if (!exam) {
-    throw new Error("Exam not found.");
-  }
+    // Prevent saving after submission
+    if (exam.status === "COMPLETED") {
+      throw new Error(
+        "This exam has already been submitted."
+      );
+    }
 
-  if (exam.status === "COMPLETED") {
-    throw new Error("Exam has already been submitted.");
-  }
-
-  // Save answers
-  for (const answer of answers) {
-    await prisma.examAnswer.upsert({
+    // Verify this question belongs to this exam
+    const answer = await tx.examAnswer.findUnique({
       where: {
         examId_questionId: {
           examId,
-          questionId: answer.questionId,
+          questionId,
         },
       },
-      update: {
-        selectedOption: answer.selectedOption,
-      },
-      create: {
-        examId,
-        questionId: answer.questionId,
-        selectedOption: answer.selectedOption,
+      include: {
+        question: {
+          select: {
+            id: true,
+            subject: true,
+            topic: true,
+            year: true,
+          },
+        },
       },
     });
-  }
 
-  // TODO: Calculate score
-  const score = 0;
+    if (!answer) {
+      throw new Error(
+        "Question does not belong to this exam."
+      );
+    }
 
-  await prisma.exam.update({
-    where: {
-      id: examId,
-    },
-    data: {
-      status: "COMPLETED",
-      score,
-      submittedAt: new Date(),
-    },
-  });
-
-  return {
-    examId,
-    score,
-    totalQuestions: answers.length,
-  };
-};
-
-/**
- * Get a single exam session
- */
-export const getExam = async (userId, examId) => {
-  const exam = await prisma.exam.findFirst({
-    where: {
-      id: examId,
-      userId,
-    },
-    include: {
-      answers: {
-        include: {
-          question: true,
+    // Update selected option
+    const updatedAnswer =
+      await tx.examAnswer.update({
+        where: {
+          examId_questionId: {
+            examId,
+            questionId,
+          },
         },
-      },
-    },
-  });
-
-  if (!exam) {
-    throw new Error("Exam not found.");
-  }
-
-  return exam;
-};
-
-/**
- * Get exam history
- */
-export const getExamHistory = async (userId) => {
-  return await prisma.exam.findMany({
-    where: {
-      userId,
-    },
-    orderBy: {
-      startedAt: "desc",
-    },
-    select: {
-      id: true,
-      subject: true,
-      year: true,
-      score: true,
-      status: true,
-      duration: true,
-      startedAt: true,
-      submittedAt: true,
-    },
-  });
-};
-
-/**
- * Get exam result
- */
-export const getExamResult = async (userId, examId) => {
-  const exam = await prisma.exam.findFirst({
-    where: {
-      id: examId,
-      userId,
-    },
-    include: {
-      answers: {
-        include: {
-          question: true,
+        data: {
+          selectedOption,
         },
-      },
-    },
-  });
-
-  if (!exam) {
-    throw new Error("Exam not found.");
-  }
-
-  if (exam.status !== "COMPLETED") {
-    throw new Error("Exam has not been submitted yet.");
-  }
-
-  return exam;
-};
-
-/**
- * Review completed exam
- */
-export const reviewExam = async (userId, examId) => {
-  const exam = await prisma.exam.findFirst({
-    where: {
-      id: examId,
-      userId,
-      status: "COMPLETED",
-    },
-    include: {
-      answers: {
-        include: {
-          question: true,
+        select: {
+          id: true,
+          examId: true,
+          questionId: true,
+          selectedOption: true,
+          updatedAt: true,
         },
-      },
-    },
+      });
+
+    return {
+      message: "Answer saved successfully.",
+      answer: updatedAnswer,
+    };
+
   });
 
-  if (!exam) {
-    throw new Error("Completed exam not found.");
-  }
-
-  return exam;
 };

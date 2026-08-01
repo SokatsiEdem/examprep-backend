@@ -2,7 +2,7 @@ import express from "express";
 import {createBookmark,getBookmarks,deleteBookmark,deleteBookmarkByQuestion,} from "../controllers/bookmark.controller.js";
 import {createBookmarkValidator,validateBookmarkId,validateQuestionId,} from "../validators/bookmark.validator.js";
 import validateRequest from "../middleware/validateRequest.js";
-import { protect } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 

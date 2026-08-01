@@ -15,19 +15,18 @@ export const protect = async (req, res, next) => {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Not authorized. No token provided.",
+        message: "Not authorized.",
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET
+    );
 
     const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        role: true,
+      where: {
+        id: decoded.id,
       },
     });
 
@@ -44,7 +43,7 @@ export const protect = async (req, res, next) => {
   } catch (error) {
     return res.status(401).json({
       success: false,
-      message: "Invalid or expired token.",
+      message: "Invalid token.",
     });
   }
 };
