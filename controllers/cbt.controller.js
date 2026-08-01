@@ -122,3 +122,15 @@ export const reviewCBT = asyncHandler(async (req, res) => {
     data: review,
   });
 });
+
+export const resumeCBT = asyncHandler(async (req, res) => {
+  const exam = await cbtService.resumeExam(
+    req.user.id,
+    req.params.id
+  );
+
+  res.status(200).json({
+    success: true,
+    data: exam,
+  });
+});

@@ -1,5 +1,5 @@
 import express from "express";
-import {startCBT, saveAnswer,submitCBT,getExam,getResult,reviewCBT,getExamHistory,} from "../controllers/cbt.controller.js";
+import {startCBT, saveAnswer,submitCBT,getExam,getResult,reviewCBT,getExamHistory,resumeCBT} from "../controllers/cbt.controller.js";
 import { protect } from "../middleware/auth.middleware.js";
 import validateRequest from "../middleware/validateRequest.js";
 import {validateStartCBT,validateSaveAnswer,validateSubmitCBT,validateExamId,} from "../validators/cbt.validator.js";
@@ -14,5 +14,6 @@ router.get("/history", getExamHistory);
 router.get("/:id",validateExamId,validateRequest,getExam);
 router.get("/:id/result",validateExamId,validateRequest,getResult);
 router.get("/:id/review",validateExamId,validateRequest,reviewCBT);
+router.get("/:id/resume",protect,resumeCBT);
 
 export default router;
