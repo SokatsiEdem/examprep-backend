@@ -1065,3 +1065,7 @@ export const ensureNoActiveExam = async (
 
   return true;
 };
+
+export const autoSavePractice = async (userId, practiceId, data) => {
+    // Save answers, current question, remaining time, progress
+};

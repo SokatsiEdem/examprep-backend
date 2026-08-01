@@ -271,3 +271,72 @@ export const saveAnswer = async (
   });
 
 };
+
+export const resumeExam = async (userId, examId) => {
+  // Find the active exam
+  const exam = await prisma.exam.findFirst({
+    where: {
+      id: examId,
+      userId,
+      status: "IN_PROGRESS",
+    },
+    include: {
+      answers: {
+        include: {
+          question: {
+            select: {
+              id: true,
+              subject: true,
+              topic: true,
+              year: true,
+              questionText: true,
+              questionImage: true,
+              options: true,
+            },
+          },
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      },
+    },
+  });
+
+  if (!exam) {
+    throw new Error("No active CBT exam found.");
+  }
+
+  // Auto submit if time has expired
+  if (isExamExpired(exam)) {
+    await autoSubmitExpiredExam(userId, examId);
+
+    throw new Error(
+      "Exam time has expired. Your exam has been submitted automatically."
+    );
+  }
+
+  // Calculate remaining time
+  const remainingSeconds = getRemainingTime(exam);
+
+  // Find last answered question
+  const answeredQuestions = exam.answers.filter(
+    (answer) => answer.selectedOption !== null
+  );
+
+  const currentQuestion =
+    answeredQuestions.length < exam.answers.length
+      ? answeredQuestions.length + 1
+      : exam.answers.length;
+
+  return {
+    examId: exam.id,
+    subject: exam.subject,
+    year: exam.year,
+    status: exam.status,
+    duration: exam.duration,
+    remainingSeconds,
+    currentQuestion,
+    startedAt: exam.startedAt,
+    answers: exam.answers,
+  };
+};
