@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import generateToken from "../utils/generateToken.js";
-import sendEmail from "../utils/sendEmail.js";
+import sendVerificationEmail from "../utils/sendEmail.js";
 
 /**
  * Register User
@@ -41,7 +41,7 @@ export const register = async ({
       role: true,
     },
   });
-
+   await sendVerificationEmail(email, verificationToken);
   return user;
 };
 
