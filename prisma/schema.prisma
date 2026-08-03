@@ -16,7 +16,7 @@ model User {
   isVerified         Boolean           @default(false)
   createdAt          DateTime          @default(now())
   updatedAt          DateTime          @updatedAt
-  resetPasswordToken String?
+  resetPasswordToken String?           @unique
   verificationToken  String?           @unique
   bookmarks          Bookmark[]
   exams              Exam[]
