@@ -11,11 +11,16 @@ export const register = asyncHandler(async (req, res) => {
 
   res.status(201).json({
     success: true,
-    message: "Account created successfully.",
-    data: user,
+    message:
+      "Account created successfully. Please check your email to verify your account.",
+    data: {
+      id: user.id,
+      fullName: user.fullName,
+      email: user.email,
+      isVerified: user.isVerified,
+    },
   });
 });
-
 /**
  * @desc Login user
  * @route POST /api/auth/login

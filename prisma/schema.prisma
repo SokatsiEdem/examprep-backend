@@ -1,15 +1,162 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
+generator client {
+  provider = "prisma-client-js"
+}
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-generator client {
-  provider = "prisma-client-js"
+model User {
+  id                 String            @id @default(uuid())
+  fullName           String
+  email              String            @unique
+  password           String
+  role               String            @default("STUDENT")
+  isVerified         Boolean           @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  resetPasswordToken String?
+  verificationToken  String?           @unique
+  bookmarks          Bookmark[]
+  exams              Exam[]
+  practices          PracticeSession[]
+  settings           UserSetting?
+
+  @@map("users")
+}
+model Question {
+  id               String           @id @default(uuid())
+  subject          String
+  topic            String
+  year             Int
+  questionText     String
+  questionImage    String?
+  options          Json
+  correctOption    String
+  explanation      String
+  explanationImage String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  examType         ExamType
+  bookmarks        Bookmark[]
+  examAnswers      ExamAnswer[]
+  answers          PracticeAnswer[]
+
+  @@index([subject, year])
+  @@index([subject, topic])
+  @@map("questions")
+}
+
+model PracticeSession {
+  id              String           @id @default(uuid())
+  userId          String
+  subjects        String[]
+  durationMinutes Int
+  selectedYear    String           @default("random")
+  status          SessionStatus    @default(IN_PROGRESS)
+  score           Int              @default(0)
+  percentage      Float            @default(0.0)
+  totalQuestions  Int              @default(0)
+  attemptedCount  Int              @default(0)
+  correctCount    Int              @default(0)
+  incorrectCount  Int              @default(0)
+  unansweredCount Int              @default(0)
+  startedAt       DateTime         @default(now())
+  submittedAt     DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  answers         PracticeAnswer[]
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("practice_sessions")
+}
+
+model PracticeAnswer {
+  id             String          @id @default(uuid())
+  sessionId      String
+  questionId     String
+  selectedOption String?
+  correctOption  String
+  isCorrect      Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  question       Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  session        PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, questionId])
+  @@map("practice_answers")
+}
+
+model Bookmark {
+  id         String   @id @default(uuid())
+  userId     String
+  questionId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, questionId])
+  @@index([userId])
+  @@index([questionId])
+  @@map("bookmarks")
+}
+
+model UserSetting {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  notificationsEnabled Boolean  @default(true)
+  preferredExamType    String?
+  preferredSubjects    String[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("user_settings")
+}
+
+model ExamAnswer {
+  id             String   @id @default(uuid())
+  examId         String
+  questionId     String
+  selectedOption String?
+  correctOption  String
+  isCorrect      Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  exam           Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
+  question       Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([examId, questionId])
+  @@map("exam_answers")
+}
+
+model Exam {
+  id              String        @id @default(uuid())
+  userId          String
+  subject         String
+  year            Int?
+  duration        Int
+  status          SessionStatus @default(IN_PROGRESS)
+  score           Int           @default(0)
+  startedAt       DateTime      @default(now())
+  submittedAt     DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  attemptedCount  Int           @default(0)
+  correctCount    Int           @default(0)
+  incorrectCount  Int           @default(0)
+  percentage      Float         @default(0)
+  totalQuestions  Int           @default(0)
+  unansweredCount Int           @default(0)
+  answers         ExamAnswer[]
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("exams")
 }
 
 enum SessionStatus {
@@ -23,175 +170,4 @@ enum ExamType {
   WAEC
   NECO
   GCE
-}
-
-model User {
-  id                     String   @id @default(uuid())
-  fullName               String
-  email                  String   @unique
-  password               String
-
-  role                   String   @default("STUDENT")
-  isVerified             Boolean  @default(false)
-
-  verificationToken      String?
-  resetPasswordToken     String?
-
-  bookmarks              Bookmark[]
-  practices              PracticeSession[]
-  exams                  Exam[]
-  settings               UserSetting?
-
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
-
-  @@map("users")
-}
-
-model Question {
-  id String @id @default(uuid())
-
-  examType ExamType
-  subject  String
-  topic    String
-  year     Int
-
-  questionText     String  @db.Text
-  questionImage    String?
-  options          Json
-  correctOption    String
-  explanation      String  @db.Text
-  explanationImage String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  answers     PracticeAnswer[]
-  examAnswers ExamAnswer[]
-  bookmarks   Bookmark[]
-
-  @@index([subject, year])
-  @@index([subject, topic])
-  @@map("questions")
-}
-
-model PracticeSession {
-  id              String        @id @default(uuid())
-  userId          String
-  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subjects        String[]
-  durationMinutes Int
-  selectedYear    String        @default("random")
-  status          SessionStatus @default(IN_PROGRESS)
-  score           Int           @default(0)
-  percentage      Float         @default(0.0)
-  totalQuestions  Int           @default(0)
-  attemptedCount  Int           @default(0)
-  correctCount    Int           @default(0)
-  incorrectCount  Int           @default(0)
-  unansweredCount Int           @default(0)
-  startedAt       DateTime      @default(now())
-  submittedAt     DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-
-  answers PracticeAnswer[]
-
-  @@index([userId])
-  @@map("practice_sessions")
-}
-
-model PracticeAnswer {
-  id             String   @id @default(uuid())
-  sessionId      String
-  questionId     String
-  selectedOption String?
-  correctOption  String
-  isCorrect      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  session  PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  question Question        @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@unique([sessionId, questionId])
-  @@map("practice_answers")
-}
-
-model Bookmark {
-  id         String   @id @default(uuid())
-  userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  questionId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, questionId])
-  @@index([userId])
-  @@index([questionId])
-  @@map("bookmarks")
-}
-
-model UserSetting {
-  id                   String   @id @default(uuid())
-  userId               String   @unique
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notificationsEnabled Boolean  @default(true)
-  preferredExamType    String?
-  preferredSubjects    String[]
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  @@index([userId])
-  @@map("user_settings")
-}
-
-model ExamAnswer {
-  id String @id @default(uuid())
-
-  examId     String
-  questionId String
-
-  selectedOption String?
-  correctOption  String
-  isCorrect      Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  exam     Exam     @relation(fields: [examId], references: [id], onDelete: Cascade)
-  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
-
-  @@unique([examId, questionId])
-  @@map("exam_answers")
-}
-
-model Exam {
-  id       String        @id @default(uuid())
-  userId   String
-  subject  String
-  year     Int?
-  duration Int
-
-  status   SessionStatus @default(IN_PROGRESS)
-
-  score            Int   @default(0)
-  percentage       Float @default(0)
-  totalQuestions   Int   @default(0)
-  attemptedCount   Int   @default(0)
-  correctCount     Int   @default(0)
-  incorrectCount   Int   @default(0)
-  unansweredCount  Int   @default(0)
-
-  startedAt   DateTime @default(now())
-  submittedAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  answers ExamAnswer[]
-
-  @@index([userId])
-  @@map("exams")
 }

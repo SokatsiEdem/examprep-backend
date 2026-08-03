@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import generateToken from "../utils/generateToken.js";
-
+import sendEmail from "../utils/sendEmail.js";
 
 /**
  * Register User
@@ -68,6 +68,13 @@ export const login = async ({
     throw new Error("Invalid credentials.");
   }
 
+  // Check if the user's email has been verified
+  if (!user.isVerified) {
+    throw new Error(
+      "Please verify your email before logging in."
+    );
+  }
+
   const token = generateToken(user.id);
 
   return {
@@ -77,10 +84,10 @@ export const login = async ({
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      isVerified: user.isVerified,
     },
   };
 };
-
 /**
  * Logout
  */
@@ -266,7 +273,9 @@ export const verifyEmail = async (
   if (!user) {
     throw new Error("Invalid verification token.");
   }
-
+  if (user.isVerified) {
+  throw new Error("Email is already verified.");
+  }
   await prisma.user.update({
     where: {
       id: user.id,
