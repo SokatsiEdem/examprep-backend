@@ -23,7 +23,9 @@ export const register = async ({
 
   const hashedPassword = await bcrypt.hash(password, 12);
 
-  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const verificationToken = Math.floor(
+  10000 + Math.random() * 90000
+  ).toString();
 
   const user = await prisma.user.create({
     data: {
@@ -264,18 +266,18 @@ export const verifyEmail = async (
   token
 ) => {
 
-  const user = await prisma.user.findFirst({
-    where: {
-      verificationToken: token,
-    },
-  });
+  const user = await prisma.user.findUnique({
+  where: {
+    verificationToken: token,
+  },
+});
 
   if (!user) {
     throw new Error("Invalid verification token.");
   }
   if (user.isVerified) {
   throw new Error("Email is already verified.");
-  }
+}
   await prisma.user.update({
     where: {
       id: user.id,
