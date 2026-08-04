@@ -141,11 +141,14 @@ export const verifyEmail = asyncHandler(async (req, res) => {
  * @access Public
  */
 export const refreshToken = asyncHandler(async (req, res) => {
-  const token = await authService.refreshToken(req.body.refreshToken);
+  const result = await authService.refreshToken(
+    req.body.refreshToken
+  );
 
   res.status(200).json({
     success: true,
-    data: token,
+    message: "Access token refreshed successfully.",
+    data: result,
   });
 });
 

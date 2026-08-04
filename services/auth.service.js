@@ -4,7 +4,8 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import generateToken from "../utils/generateToken.js";
 import sendVerificationEmail from "../utils/sendEmail.js";
-
+import { generateAccessToken } from "../utils/generateAccessToken.js";
+import { generateRefreshToken } from "../utils/generateRefreshToken.js";
 /**
  * Register User
  */
@@ -77,10 +78,11 @@ export const login = async ({
     );
   }
 
-  const token = generateToken(user.id);
-
+  const accessToken = generateAccessToken(user.id);
+  const refreshToken = generateRefreshToken(user.id);
   return {
-    token,
+    accessToken,
+    refreshToken,
     user: {
       id: user.id,
       fullName: user.fullName,
@@ -294,20 +296,28 @@ export const verifyEmail = async (
 /**
  * Refresh Token
  */
-export const refreshToken = async (
-  refreshToken
-) => {
-
+export const refreshToken = async (refreshToken) => {
   const payload = jwt.verify(
     refreshToken,
-    process.env.JWT_SECRET
+    process.env.JWT_REFRESH_SECRET
   );
 
+  const user = await prisma.user.findUnique({
+    where: {
+      id: payload.id,
+    },
+  });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  const accessToken = generateAccessToken(user.id);
+
   return {
-    accessToken: generateToken(payload.id),
+    accessToken,
   };
 };
-
 /**
  * Get user settings
  */
