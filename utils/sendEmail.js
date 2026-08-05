@@ -18,7 +18,8 @@ export const sendEmail = async ({ to, subject, html }) => {
     };
 
     console.log("Payload:", JSON.stringify(payload, null, 2));
-
+    console.log("EMAIL_FROM:", process.env.EMAIL_FROM);
+    console.log("EMAIL_FROM_NAME:", process.env.EMAIL_FROM_NAME);
     const response = await axios.post(BREVO_API_URL, payload, {
       headers: {
         "api-key": process.env.BREVO_API_KEY,
