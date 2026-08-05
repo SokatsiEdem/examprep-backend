@@ -13,8 +13,8 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
-await transporter.verify();
-console.log("SMTP connection successful");
+// await transporter.verify();
+// console.log("SMTP connection successful");
 export const sendVerificationEmail = async (email, token) => {
   try {
     console.log("8. Entered sendVerificationEmail");
@@ -32,10 +32,10 @@ export const sendVerificationEmail = async (email, token) => {
       `,
     });
 
-    console.log("9. Mail sent:", info.messageId);
+    console.log("Mail sent:", info.messageId);
     return info;
   } catch (error) {
-    console.error("❌ sendMail failed:", error);
+    console.error("sendMail failed:", error);
     throw error;
   }
 };

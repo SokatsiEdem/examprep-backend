@@ -48,7 +48,11 @@ console.log("4. Creating user");
   });
 console.log("5. User created");
 console.log("6. Sending verification email");
-   await sendVerificationEmail(email, verificationToken);
+  try {
+  await sendVerificationEmail(email, verificationToken);
+} catch (err) {
+  console.error("Verification email failed:", err.message);
+}
 console.log("7. Verification email sent");
   return user;
 };
