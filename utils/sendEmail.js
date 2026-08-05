@@ -10,8 +10,8 @@ const transporter = nodemailer.createTransport({
 
 export const sendVerificationEmail = async (email, token) => {
   try {
-    const { data, error } = await resend.emails.send({
-      from: "ExamPrep <onboarding@resend.dev>",
+    const info = await transporter.sendMail({
+      from: `"ExamPrep" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Verify your Email",
       html: `
@@ -26,46 +26,33 @@ export const sendVerificationEmail = async (email, token) => {
       `,
     });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    return data;
+    console.log("Verification email sent:", info.response);
+    return info;
   } catch (err) {
-    console.error("Email sending failed:", err);
+    console.error("Verification email failed:", err);
     throw err;
   }
 };
 
 export const sendPasswordResetEmail = async (email, token) => {
   try {
-    const { data, error } = await resend.emails.send({
-      from: "ExamPrep <onboarding@resend.dev>",
+    const info = await transporter.sendMail({
+      from: `"ExamPrep" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Password Reset Token",
       html: `
         <h2>Password Reset Request</h2>
-
-        <p>You requested to reset your password.</p>
 
         <p>Your password reset token is:</p>
 
         <h1>${token}</h1>
 
         <p>This token expires in 15 minutes.</p>
-
-        <p>If you did not request this, ignore this email.</p>
       `,
     });
 
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    console.log("Password reset email sent successfully");
-
-    return data;
-
+    console.log("Password reset email sent:", info.response);
+    return info;
   } catch (err) {
     console.error("Password reset email failed:", err);
     throw err;
