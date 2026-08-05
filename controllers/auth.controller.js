@@ -70,15 +70,19 @@ export const getProfile = asyncHandler(async (req, res) => {
  * @access Private
  */
 export const updateProfile = asyncHandler(async (req, res) => {
-  const user = await authService.updateProfile(req.user.id, req.body);
+  const userId = req.user.id;
+
+  const updatedUser = await authService.updateProfile(
+    userId,
+    req.body
+  );
 
   res.status(200).json({
     success: true,
     message: "Profile updated successfully.",
-    data: user,
+    data: updatedUser
   });
 });
-
 /**
  * @desc Change password
  * @route PUT /api/auth/change-password

@@ -17,7 +17,7 @@ router.post("/refresh-token", refreshToken);
 // Protected Routes
 router.post("/logout", protect, logout);
 router.get("/profile", protect, getProfile);
-router.put("/profile",protect,updateProfileValidator,validateRequest,updateProfile);
+router.put("/update-profile",protect,updateProfileValidator,validateRequest,updateProfile);
 router.put("/change-password",protect, changePasswordValidator, validateRequest, changePassword);
 
 router.get("/settings", protect, getSettings);

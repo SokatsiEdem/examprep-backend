@@ -144,28 +144,52 @@ export const getProfile = async (userId) => {
 /**
  * Update Profile
  */
-export const updateProfile = async (
-  userId,
-  payload
-) => {
+export const updateProfile = async (userId, data) => {
+  const user = await prisma.user.findUnique({
+    where: {
+      id: userId,
+    },
+  });
 
-  return prisma.user.update({
+  if (!user) {
+    throw new Error("User not found");
+  }
+
+  if (data.email && data.email !== user.email) {
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: data.email,
+      },
+    });
+
+    if (existingUser) {
+      throw new Error("Email already exists");
+    }
+  }
+
+  const updatedUser = await prisma.user.update({
     where: {
       id: userId,
     },
     data: {
-      fullName: payload.fullName,
-      email: payload.email,
-    },
-    select: {
-      id: true,
-      fullName: true,
-      email: true,
-      role: true,
+      ...(data.fullName && {
+        fullName: data.fullName,
+      }),
+
+      ...(data.email && {
+        email: data.email,
+        isVerified: false,
+      }),
     },
   });
-};
 
+  return {
+    id: updatedUser.id,
+    fullName: updatedUser.fullName,
+    email: updatedUser.email,
+    isVerified: updatedUser.isVerified,
+  };
+};
 /**
  * Change Password
  */
