@@ -1,10 +1,11 @@
 const errorHandler = (err, req, res, next) => {
+  console.error(err.stack); // Log the full error
+
   let statusCode = res.statusCode === 200 ? 500 : res.statusCode;
 
   // Prisma Errors
   if (err.code === "P2002") {
     statusCode = 409;
-
     return res.status(statusCode).json({
       success: false,
       message: "A record with this value already exists.",
@@ -13,7 +14,6 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.code === "P2025") {
     statusCode = 404;
-
     return res.status(statusCode).json({
       success: false,
       message: "Requested resource was not found.",
@@ -23,7 +23,6 @@ const errorHandler = (err, req, res, next) => {
   // JWT Errors
   if (err.name === "JsonWebTokenError") {
     statusCode = 401;
-
     return res.status(statusCode).json({
       success: false,
       message: "Invalid authentication token.",
@@ -32,7 +31,6 @@ const errorHandler = (err, req, res, next) => {
 
   if (err.name === "TokenExpiredError") {
     statusCode = 401;
-
     return res.status(statusCode).json({
       success: false,
       message: "Authentication token has expired.",
@@ -42,7 +40,6 @@ const errorHandler = (err, req, res, next) => {
   // Validation Errors
   if (err.name === "ValidationError") {
     statusCode = 400;
-
     return res.status(statusCode).json({
       success: false,
       message: err.message,
@@ -50,7 +47,7 @@ const errorHandler = (err, req, res, next) => {
   }
 
   // Default Error Response
-  res.status(statusCode).json({
+  return res.status(statusCode).json({
     success: false,
     message: err.message || "Internal Server Error",
     stack:
