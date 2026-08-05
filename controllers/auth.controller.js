@@ -142,7 +142,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { email, token } = req.body;
 
-  const user = await authService.verifyEmail(email, token);
+  const user = await authService.verifyEmail(email, otp);
 
   const accessToken = generateAccessToken(user);
   const refreshToken = generateRefreshToken(user);
