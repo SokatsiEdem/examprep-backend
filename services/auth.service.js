@@ -6,6 +6,9 @@ import crypto from "crypto";
 import sendVerificationEmail from "../utils/sendEmail.js";
 import  generateAccessToken  from "../utils/generateAccessToken.js";
 import  generateRefreshToken  from "../utils/generateRefreshToken.js";
+import { Resend } from "resend";
+import { sendPasswordResetEmail } from "../utils/email.js";
+
 /**
  * Register User
  */
@@ -236,33 +239,50 @@ export const changePassword = async (
 /**
  * Forgot Password
  */
-export const forgotPassword = async (
-  email
-) => {
+export const forgotPassword = async (email) => {
 
   const user = await prisma.user.findUnique({
-    where: { email },
+    where: {
+      email,
+    },
   });
 
   if (!user) {
-    throw new Error("User not found.");
+    throw new Error("User not found");
   }
 
-  const token = crypto.randomBytes(32).toString("hex");
+
+  const resetToken = Math.floor(
+    100000 + Math.random() * 900000
+  ).toString();
+
+
+  const hashedToken = crypto
+    .createHash("sha256")
+    .update(resetToken)
+    .digest("hex");
+
 
   await prisma.user.update({
     where: {
       email,
     },
     data: {
-      resetPasswordToken: token,
+      resetPasswordToken: hashedToken,
+      resetPasswordExpires: new Date(
+        Date.now() + 15 * 60 * 1000
+      ),
     },
   });
 
-  // TODO:
-  // Send Email
 
-  return token;
+  await sendPasswordResetEmail(
+    user.email,
+    resetToken
+  );
+
+
+  return true;
 };
 
 /**

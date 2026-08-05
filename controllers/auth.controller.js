@@ -107,7 +107,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
 
   res.status(200).json({
     success: true,
-    message: "Password reset link sent successfully.",
+    message: "Password reset token sent successfully.",
   });
 });
 
