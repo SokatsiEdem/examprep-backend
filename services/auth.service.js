@@ -88,7 +88,8 @@ export const login = async ({
       "Please verify your email before logging in."
     );
   }
-
+ console.log("JWT_SECRET:", process.env.JWT_SECRET);
+ console.log("JWT_REFRESH_SECRET:", process.env.JWT_REFRESH_SECRET);
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
   return {
@@ -106,10 +107,14 @@ export const login = async ({
 /**
  * Logout
  */
+/**
+ * Logout User
+ */
 export const logout = async () => {
-  return true;
+  return {
+    message: "Logged out successfully."
+  };
 };
-
 /**
  * Get Profile
  */
