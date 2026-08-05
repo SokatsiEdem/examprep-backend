@@ -7,7 +7,7 @@ import sendVerificationEmail from "../utils/sendEmail.js";
 import  generateAccessToken  from "../utils/generateAccessToken.js";
 import  generateRefreshToken  from "../utils/generateRefreshToken.js";
 import nodemailer from "nodemailer";
-import { sendPasswordResetEmail } from "../utils/email.js";
+import { sendPasswordResetEmail } from "../utils/sendEmail.js";
 
 /**
  * Register User
