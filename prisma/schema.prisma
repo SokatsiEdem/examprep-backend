@@ -17,10 +17,11 @@ model User {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
 
+  verificationToken     String?           @unique
+  verificationTokenExpires DateTime?
+
   resetPasswordToken    String?           @unique
   resetPasswordExpires  DateTime?
-
-  verificationToken     String?           @unique
 
   bookmarks             Bookmark[]
   exams                 Exam[]
