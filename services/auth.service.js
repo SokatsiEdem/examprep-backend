@@ -31,8 +31,8 @@ console.log("2. Hashing password");
 
 console.log("3. Generating verification token");
   const verificationToken = Math.floor(
-  10000 + Math.random() * 90000
-  ).toString();
+  100000 + Math.random() * 900000
+).toString();
 console.log("4. Creating user");
   const user = await prisma.user.create({
     data: {
@@ -324,33 +324,47 @@ export const resetPassword = async ({
 /**
  * Verify Email
  */
-export const verifyEmail = async (
-  token
-) => {
-
-  const user = await prisma.user.findFirst({
-  where: {
-    verificationToken: token,
-  },
-});
+export const verifyEmail = async ({ email, otp }) => {
+  // Find user
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
 
   if (!user) {
-    throw new Error("Invalid verification token.");
+    throw new Error("User not found.");
   }
-  if (user.isVerified) {
-  throw new Error("Email is already verified.");
-}
-  await prisma.user.update({
-    where: {
-      id: user.id,
-    },
+
+  // Validate OTP
+  if (user.verificationToken !== otp) {
+    throw new Error("Invalid verification code.");
+  }
+
+  // Mark user as verified
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
     data: {
       isVerified: true,
       verificationToken: null,
     },
   });
 
-  return true;
+  // Generate tokens
+  const accessToken = generateAccessToken(updatedUser);
+  const refreshToken = generateRefreshToken(updatedUser);
+
+  // Store hashed refresh token
+  await prisma.user.update({
+    where: { id: updatedUser.id },
+    data: {
+      refreshToken: await bcrypt.hash(refreshToken, 12),
+    },
+  });
+
+  return {
+    user: updatedUser,
+    accessToken,
+    refreshToken,
+  };
 };
 
 /**
