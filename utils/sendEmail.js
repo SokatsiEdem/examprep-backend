@@ -1,42 +1,36 @@
-import dns from "dns";
-import nodemailer from "nodemailer";
+import { Resend } from "resend";
 
-dns.setDefaultResultOrder("ipv4first");
+const resend = new Resend(process.env.RESEND_API_KEY);
 
-const transporter = nodemailer.createTransport({
-  host: "smtp.gmail.com",
-  port: 587,
-  secure: false,
-  family: 4, // Force IPv4
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-// await transporter.verify();
-// console.log("SMTP connection successful");
 export const sendVerificationEmail = async (email, token) => {
   try {
-    console.log("8. Entered sendVerificationEmail");
-
-    const info = await transporter.sendMail({
-      from: process.env.EMAIL_USER,
+    const { data, error } = await resend.emails.send({
+      from: "ExamPrep <onboarding@resend.dev>",
       to: email,
-      subject: "Verify your email",
+      subject: "Verify your Email",
       html: `
         <h2>Welcome to ExamPrep</h2>
         <p>Thank you for registering.</p>
-        <p>Your verification token is:</p>
-        <h3>${token}</h3>
-        <p>Use this token to verify your account.</p>
+
+        <p>Your verification code is:</p>
+
+        <h1>${token}</h1>
+
+        <p>Enter this code in the app to verify your email.</p>
       `,
     });
 
-    console.log("Mail sent:", info.messageId);
-    return info;
-  } catch (error) {
-    console.error("sendMail failed:", error);
-    throw error;
+    if (error) {
+      console.error(error);
+      throw new Error(error.message);
+    }
+
+    console.log("Email sent successfully");
+    return data;
+  } catch (err) {
+    console.error("Email sending failed:", err);
+    throw err;
   }
 };
+
 export default sendVerificationEmail;
