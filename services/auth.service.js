@@ -3,11 +3,9 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 //import generateToken from "../utils/generateToken.js";
-import sendVerificationEmail from "../utils/sendEmail.js";
 import  generateAccessToken  from "../utils/generateAccessToken.js";
 import  generateRefreshToken  from "../utils/generateRefreshToken.js";
-import nodemailer from "nodemailer";
-import { sendPasswordResetEmail } from "../utils/sendEmail.js";
+import {sendVerificationEmail, sendPasswordResetEmail,} from "../utils/sendEmail.js";
 
 /**
  * Register User
@@ -51,23 +49,19 @@ console.log("4. Creating user");
   });
 console.log("5. User created");
 console.log("6. Sending verification email");
-  try {
-  await sendVerificationEmail(email, verificationToken);
+try {
+    await sendVerificationEmail(email, verificationToken);
+    console.log("7. Verification email sent");
 } catch (err) {
-  console.error("Verification email failed:", err.message);
+    console.error("Verification email failed:", err);
 }
-console.log("7. Verification email sent");
   return user;
 };
 
 /**
  * Login
  */
-export const login = async ({
-  email,
-  password,
-}) => {
-
+export const login = async ({ email, password }) => {
   const user = await prisma.user.findUnique({
     where: { email },
   });
@@ -76,25 +70,26 @@ export const login = async ({
     throw new Error("Invalid credentials.");
   }
 
-  const isMatch = await bcrypt.compare(
-    password,
-    user.password
-  );
+  const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
     throw new Error("Invalid credentials.");
   }
 
-  // Check if the user's email has been verified
   if (!user.isVerified) {
-    throw new Error(
-      "Please verify your email before logging in."
-    );
+    throw new Error("Please verify your email before logging in.");
   }
- console.log("JWT_SECRET:", process.env.JWT_SECRET);
- console.log("JWT_REFRESH_SECRET:", process.env.JWT_REFRESH_SECRET);
+
   const accessToken = generateAccessToken(user.id);
   const refreshToken = generateRefreshToken(user.id);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refreshToken: await bcrypt.hash(refreshToken, 12),
+    },
+  });
+
   return {
     accessToken,
     refreshToken,
@@ -107,9 +102,6 @@ export const login = async ({
     },
   };
 };
-/**
- * Logout
- */
 /**
  * Logout User
  */
@@ -293,11 +285,19 @@ export const resetPassword = async ({
   password,
 }) => {
 
-  const user = await prisma.user.findFirst({
-    where: {
-      resetPasswordToken: token,
+  const hashedToken = crypto
+  .createHash("sha256")
+  .update(token)
+  .digest("hex");
+
+const user = await prisma.user.findFirst({
+  where: {
+    resetPasswordToken: hashedToken,
+    resetPasswordExpires: {
+      gt: new Date(),
     },
-  });
+  },
+});
 
   if (!user) {
     throw new Error("Invalid token.");
@@ -323,49 +323,7 @@ export const resetPassword = async ({
 
 /**
  * Verify Email
- */
-export const verifyEmail = async ({ email, otp }) => {
-  // Find user
-  const user = await prisma.user.findUnique({
-    where: { email },
-  });
-
-  if (!user) {
-    throw new Error("User not found.");
-  }
-
-  // Validate OTP
-  if (user.verificationToken !== otp) {
-    throw new Error("Invalid verification code.");
-  }
-
-  // Mark user as verified
-  const updatedUser = await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      isVerified: true,
-      verificationToken: null,
-    },
-  });
-
-  // Generate tokens
-  const accessToken = generateAccessToken(updatedUser);
-  const refreshToken = generateRefreshToken(updatedUser);
-
-  // Store hashed refresh token
-  await prisma.user.update({
-    where: { id: updatedUser.id },
-    data: {
-      refreshToken: await bcrypt.hash(refreshToken, 12),
-    },
-  });
-
-  return {
-    user: updatedUser,
-    accessToken,
-    refreshToken,
-  };
-};
+  */
 
 /**
  * Refresh Token
@@ -442,4 +400,52 @@ export const updateSettings = async (userId, payload) => {
       notificationsEnabled,
     },
   });
+};
+
+export const verifyEmail = async (email, otp) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  if (user.isVerified) {
+    throw new Error("Email is already verified.");
+  }
+
+  if (user.verificationToken !== otp) {
+    throw new Error("Invalid verification code.");
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      isVerified: true,
+      verificationToken: null,
+    },
+  });
+
+  const accessToken = generateAccessToken(updatedUser.id);
+  const refreshToken = generateRefreshToken(updatedUser.id);
+
+  await prisma.user.update({
+    where: { id: updatedUser.id },
+    data: {
+      refreshToken: await bcrypt.hash(refreshToken, 12),
+    },
+  });
+
+  return {
+    user: {
+      id: updatedUser.id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      role: updatedUser.role,
+      isVerified: updatedUser.isVerified,
+    },
+    accessToken,
+    refreshToken,
+  };
 };

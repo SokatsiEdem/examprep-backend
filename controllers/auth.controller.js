@@ -1,5 +1,9 @@
 import asyncHandler from "../middleware/asyncHandler.js";
 import * as authService from "../services/auth.service.js";
+import bcrypt from "bcrypt";
+import prisma from "../config/prisma.js";
+import generateAccessToken from "../utils/generateAccessToken.js";
+import generateRefreshToken from "../utils/generateRefreshToken.js";
 
 /**
  * @desc Register a new user
@@ -130,15 +134,42 @@ export const resetPassword = asyncHandler(async (req, res) => {
  * @route POST /api/auth/verify-email
  * @access Public
  */
+/**
+ * @desc Verify email
+ * @route POST /api/auth/verify-email
+ * @access Public
+ */
 export const verifyEmail = asyncHandler(async (req, res) => {
-  await authService.verifyEmail(req.body.token);
+  const { email, token } = req.body;
+
+  const user = await authService.verifyEmail(email, token);
+
+  const accessToken = generateAccessToken(user);
+  const refreshToken = generateRefreshToken(user);
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      refreshToken: await bcrypt.hash(refreshToken, 12),
+    },
+  });
 
   res.status(200).json({
     success: true,
     message: "Email verified successfully.",
+    data: {
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+      },
+      accessToken,
+      refreshToken,
+    },
   });
 });
-
 /**
  * @desc Refresh access token
  * @route POST /api/auth/refresh-token
