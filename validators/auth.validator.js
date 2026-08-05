@@ -77,3 +77,10 @@ export const updateSettingsValidator = [
     .optional()
     .isBoolean(),
 ];
+export const resendVerificationOtpValidator = [
+  body("email")
+    .notEmpty()
+    .withMessage("Email is required.")
+    .isEmail()
+    .withMessage("Please provide a valid email address."),
+];

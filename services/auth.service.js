@@ -29,7 +29,7 @@ console.log("2. Hashing password");
 
 console.log("3. Generating verification token");
   const verificationToken = Math.floor(
-  100000 + Math.random() * 900000
+  10000 + Math.random() * 90000
 ).toString();
 console.log("4. Creating user");
   const user = await prisma.user.create({
@@ -447,5 +447,38 @@ export const verifyEmail = async (email, otp) => {
     },
     accessToken,
     refreshToken,
+  };
+};
+
+export const resendVerificationOtp = async (email) => {
+  const user = await prisma.user.findUnique({
+    where: { email },
+  });
+
+  if (!user) {
+    throw new Error("User not found.");
+  }
+
+  if (user.isVerified) {
+    throw new Error("Email is already verified.");
+  }
+
+  // Generate a new 5-digit OTP
+  const verificationToken = Math.floor(
+    10000 + Math.random() * 90000
+  ).toString();
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      verificationToken,
+      verificationTokenExpires: new Date(Date.now() + 10 * 60 * 1000),
+    },
+  });
+
+  await sendVerificationEmail(user.email, verificationToken);
+
+  return {
+    message: "A new verification code has been sent to your email.",
   };
 };

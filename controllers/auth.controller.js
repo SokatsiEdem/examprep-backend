@@ -218,3 +218,14 @@ export const updateSettings = asyncHandler(async (req, res) => {
     data: settings,
   });
 });
+
+export const resendVerificationOtp = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const result = await authService.resendVerificationOtp(email);
+
+  res.status(200).json({
+    success: true,
+    message: result.message,
+  });
+});
