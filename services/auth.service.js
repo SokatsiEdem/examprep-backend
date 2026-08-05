@@ -279,7 +279,7 @@ export const verifyEmail = async (
   token
 ) => {
 
-  const user = await prisma.user.findUnique({
+  const user = await prisma.user.findFirst({
   where: {
     verificationToken: token,
   },
