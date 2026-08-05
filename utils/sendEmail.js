@@ -1,15 +1,10 @@
 import axios from "axios";
+import dotenv from "dotenv";
 
-const res = await axios.get(
-  "https://api.brevo.com/v3/account",
-  {
-    headers: {
-      "api-key": process.env.BREVO_API_KEY,
-    },
-  }
-);
+dotenv.config();
 
-console.log(res.data);
+const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+
 export const sendEmail = async ({ to, subject, html }) => {
   try {
     const payload = {
@@ -17,45 +12,29 @@ export const sendEmail = async ({ to, subject, html }) => {
         name: process.env.EMAIL_FROM_NAME,
         email: process.env.EMAIL_FROM,
       },
-      to: [
-        {
-          email: to,
-        },
-      ],
+      to: [{ email: to }],
       subject,
       htmlContent: html,
     };
 
     console.log("Payload:", JSON.stringify(payload, null, 2));
 
-    const response = await axios.post(
-      BREVO_API_URL,
-      payload,
-      {
-        headers: {
-          "api-key": process.env.BREVO_API_KEY,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+    const response = await axios.post(BREVO_API_URL, payload, {
+      headers: {
+        "api-key": process.env.BREVO_API_KEY,
+        "Content-Type": "application/json",
+      },
+    });
 
     console.log("Email sent successfully");
     return response.data;
-
   } catch (error) {
     console.error("Status:", error.response?.status);
-    console.error(
-      "Headers:",
-      JSON.stringify(error.response?.headers, null, 2)
-    );
-    console.error(
-      "Data:",
-      JSON.stringify(error.response?.data, null, 2)
-    );
-
+    console.error("Headers:", error.response?.headers);
+    console.error("Data:", error.response?.data);
     throw error;
   }
-}; // <-- THIS WAS MISSING
+};
 
 export const sendVerificationEmail = (email, otp) => {
   return sendEmail({
