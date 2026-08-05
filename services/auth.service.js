@@ -2,10 +2,10 @@ import prisma from "../config/prisma.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
-import generateToken from "../utils/generateToken.js";
+//import generateToken from "../utils/generateToken.js";
 import sendVerificationEmail from "../utils/sendEmail.js";
-import { generateAccessToken } from "../utils/generateAccessToken.js";
-import { generateRefreshToken } from "../utils/generateRefreshToken.js";
+import  generateAccessToken  from "../utils/generateAccessToken.js";
+import  generateRefreshToken  from "../utils/generateRefreshToken.js";
 /**
  * Register User
  */
