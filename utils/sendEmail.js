@@ -8,8 +8,12 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+await transporter.verify();
+
+console.log("SMTP connection successful");
 export const sendVerificationEmail = async (email, token) => {
-  await transporter.sendMail({
+  console.log("8. Entered sendVerificationEmail");
+  const info = await transporter.sendMail({
     from: process.env.EMAIL_USER,
     to: email,
     subject: "Verify your email",
@@ -21,6 +25,8 @@ export const sendVerificationEmail = async (email, token) => {
       <p>Use this token to verify your account.</p>
     `,
   });
+   console.log("9. Mail sent:", info.messageId);
+   return info;
 };
 
 export default sendVerificationEmail;

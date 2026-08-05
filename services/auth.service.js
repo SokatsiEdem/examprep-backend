@@ -13,7 +13,9 @@ export const register = async ({
   fullName,
   email,
   password,
+  
 }) => {
+  console.log("1. Checking if user exists");
   const existingUser = await prisma.user.findUnique({
     where: { email },
   });
@@ -21,13 +23,14 @@ export const register = async ({
   if (existingUser) {
     throw new Error("Email already exists.");
   }
-
+console.log("2. Hashing password");
   const hashedPassword = await bcrypt.hash(password, 12);
 
+console.log("3. Generating verification token");
   const verificationToken = Math.floor(
   10000 + Math.random() * 90000
   ).toString();
-
+console.log("4. Creating user");
   const user = await prisma.user.create({
     data: {
       fullName,
@@ -40,9 +43,13 @@ export const register = async ({
       fullName: true,
       email: true,
       role: true,
+      isVerified: true,
     },
   });
+console.log("5. User created");
+console.log("6. Sending verification email");
    await sendVerificationEmail(email, verificationToken);
+console.log("7. Verification email sent");
   return user;
 };
 
