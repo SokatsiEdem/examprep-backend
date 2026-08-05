@@ -56,6 +56,14 @@ app.get("/", (req, res) => {
     version: "1.0.0",
   });
 });
+app.get("/env-test", (req, res) => {
+  res.json({
+    JWT_SECRET: !!process.env.JWT_SECRET,
+    JWT_REFRESH_SECRET: !!process.env.JWT_REFRESH_SECRET,
+    keys: Object.keys(process.env).filter(key => key.startsWith("JWT")),
+  });
+});
+
 
 /**
  * ==========================
