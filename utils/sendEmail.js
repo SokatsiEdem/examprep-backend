@@ -1,36 +1,27 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
 
 export const sendVerificationEmail = async (email, token) => {
-  try {
-    const { data, error } = await resend.emails.send({
-      from: "ExamPrep <onboarding@resend.dev>",
-      to: email,
-      subject: "Verify your Email",
-      html: `
-        <h2>Welcome to ExamPrep</h2>
-        <p>Thank you for registering.</p>
+  await transporter.sendMail({
+    from: `"ExamPrep" <${process.env.EMAIL_USER}>`,
+    to: email,
+    subject: "Verify your Email",
+    html: `
+      <h2>Welcome to ExamPrep</h2>
+      <p>Your verification code is:</p>
+      <h1>${token}</h1>
+      <p>This code expires in 10 minutes.</p>
+    `,
+  });
 
-        <p>Your verification code is:</p>
-
-        <h1>${token}</h1>
-
-        <p>Enter this code in the app to verify your email.</p>
-      `,
-    });
-
-    if (error) {
-      console.error(error);
-      throw new Error(error.message);
-    }
-
-    console.log("Email sent successfully");
-    return data;
-  } catch (err) {
-    console.error("Email sending failed:", err);
-    throw err;
-  }
+  console.log("Email sent successfully");
 };
 
 export default sendVerificationEmail;

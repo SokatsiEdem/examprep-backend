@@ -6,7 +6,7 @@ import crypto from "crypto";
 import sendVerificationEmail from "../utils/sendEmail.js";
 import  generateAccessToken  from "../utils/generateAccessToken.js";
 import  generateRefreshToken  from "../utils/generateRefreshToken.js";
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 import { sendPasswordResetEmail } from "../utils/email.js";
 
 /**
