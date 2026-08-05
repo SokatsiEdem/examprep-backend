@@ -8,21 +8,25 @@ console.log("EMAIL_FROM:", process.env.EMAIL_FROM);
 
 export const sendEmail = async ({ to, subject, html }) => {
   try {
+    const payload = {
+      sender: {
+        name: process.env.EMAIL_FROM_NAME,
+        email: process.env.EMAIL_FROM,
+      },
+      to: [
+        {
+          email: to,
+        },
+      ],
+      subject,
+      htmlContent: html,
+    };
+
+    console.log("Payload:", JSON.stringify(payload, null, 2));
+
     const response = await axios.post(
       BREVO_API_URL,
-      {
-        sender: {
-          name: process.env.EMAIL_FROM_NAME,
-          email: process.env.EMAIL_FROM,
-        },
-        to: [
-          {
-            email: to,
-          },
-        ],
-        subject,
-        htmlContent: html,
-      },
+      payload,
       {
         headers: {
           "api-key": process.env.BREVO_API_KEY,
@@ -33,14 +37,21 @@ export const sendEmail = async ({ to, subject, html }) => {
 
     console.log("Email sent successfully");
     return response.data;
+
   } catch (error) {
+    console.error("Status:", error.response?.status);
     console.error(
-      "Brevo Error:",
-      error.response?.data || error.message
+      "Headers:",
+      JSON.stringify(error.response?.headers, null, 2)
     );
+    console.error(
+      "Data:",
+      JSON.stringify(error.response?.data, null, 2)
+    );
+
     throw error;
   }
-};
+}; // <-- THIS WAS MISSING
 
 export const sendVerificationEmail = (email, otp) => {
   return sendEmail({
