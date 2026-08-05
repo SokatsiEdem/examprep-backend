@@ -1,35 +1,37 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
+  secure: false, // port 587 uses STARTTLS
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-});
 
+});
 export const sendVerificationEmail = async (email, token) => {
   try {
+    // Test SMTP connection
+    await transporter.verify();
+    console.log("SMTP connection successful");
+
     const info = await transporter.sendMail({
       from: `"ExamPrep" <${process.env.EMAIL_USER}>`,
       to: email,
       subject: "Verify your Email",
       html: `
         <h2>Welcome to ExamPrep</h2>
-        <p>Thank you for registering.</p>
-
         <p>Your verification code is:</p>
-
         <h1>${token}</h1>
-
-        <p>Enter this code in the app to verify your email.</p>
       `,
     });
 
-    console.log("Verification email sent:", info.response);
+    console.log("Email sent:", info.response);
+
     return info;
   } catch (err) {
-    console.error("Verification email failed:", err);
+    console.error("Email sending failed:", err);
     throw err;
   }
 };
