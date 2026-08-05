@@ -3,19 +3,22 @@ import nodemailer from "nodemailer";
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: Number(process.env.EMAIL_PORT),
-  secure: false, // port 587 uses STARTTLS
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
-
+  logger: true,
+  debug: true,
 });
 export const sendVerificationEmail = async (email, token) => {
   try {
     // Test SMTP connection
     await transporter.verify();
     console.log("SMTP connection successful");
-
+     console.log("Verifying SMTP...");
+    transporter.verify();
+console.log("SMTP verified successfully");
     const info = await transporter.sendMail({
       from: `"ExamPrep" <${process.env.EMAIL_USER}>`,
       to: email,
