@@ -1,15 +1,20 @@
 import nodemailer from "nodemailer";
 
+import nodemailer from "nodemailer";
+
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: process.env.EMAIL_HOST,
+  port: Number(process.env.EMAIL_PORT),
+  secure: false, // true only for port 465
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
-
 await transporter.verify();
-
 console.log("SMTP connection successful");
 export const sendVerificationEmail = async (email, token) => {
   console.log("8. Entered sendVerificationEmail");
