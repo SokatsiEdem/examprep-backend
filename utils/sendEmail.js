@@ -2,15 +2,17 @@ import nodemailer from "nodemailer";
 
 // Create transporter once
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
+  host: "smtp.gmail.com",
   port: Number(process.env.EMAIL_PORT),
   secure: Number(process.env.EMAIL_PORT) === 465,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 10000,
 });
-
 // Generic email sender
 export const sendEmail = async ({ to, subject, text, html }) => {
   try {
