@@ -1,11 +1,15 @@
 import axios from "axios";
 
-const BREVO_API_URL = "https://api.brevo.com/v3/smtp/email";
+const res = await axios.get(
+  "https://api.brevo.com/v3/account",
+  {
+    headers: {
+      "api-key": process.env.BREVO_API_KEY,
+    },
+  }
+);
 
-console.log("BREVO_API_KEY:", process.env.BREVO_API_KEY?.substring(0, 12));
-console.log("EMAIL_FROM_NAME:", process.env.EMAIL_FROM_NAME);
-console.log("EMAIL_FROM:", process.env.EMAIL_FROM);
-
+console.log(res.data);
 export const sendEmail = async ({ to, subject, html }) => {
   try {
     const payload = {
