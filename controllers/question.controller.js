@@ -1,6 +1,5 @@
 import * as questionService from "../services/question.service.js";
 import asyncHandler from "../middleware/asyncHandler.js";
-import { parseExcel } from "../utils/excelParser.js";
 /**
  * @desc Get all questions
  * @route GET /api/questions

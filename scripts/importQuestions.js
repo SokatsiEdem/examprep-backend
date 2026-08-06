@@ -1,51 +1,101 @@
-import XLSX from "xlsx";
 import prisma from "../config/prisma.js";
+import { parseExcel } from "../utils/excelParser.js";
 
-export const importQuestions = async (filePath) => {
-  const workbook = XLSX.readFile(filePath);
+async function importQuestions() {
+  try {
+    console.log("================================");
+    console.log("Reading Excel file...");
 
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  const rows = XLSX.utils.sheet_to_json(sheet);
+    const questions = await parseExcel("./data/questions.xlsx");
 
-  let imported = 0;
-  let skipped = 0;
+    console.log(`Found ${questions.length} questions`);
 
-  for (const row of rows) {
-    const exists = await prisma.question.findFirst({
-  where: {
-    questionText: row.questionText,
-  },
-});
-    if (exists) {
-      skipped++;
-      continue;
+    const validQuestions = [];
+    const errors = [];
+
+    questions.forEach((question, index) => {
+      const validOptions = ["A", "B", "C", "D"];
+
+      if (
+        !question.questionText ||
+        !question.options?.A ||
+        !question.options?.B ||
+        !question.options?.C ||
+        !question.options?.D ||
+        !question.correctOption
+      ) {
+        errors.push({
+          row: index + 2,
+          reason: "Missing required fields",
+        });
+
+        return;
+      }
+
+      // Validate correct option
+      const correctOption = question.correctOption
+        .toString()
+        .trim()
+        .toUpperCase();
+
+      if (!validOptions.includes(correctOption)) {
+        errors.push({
+          row: index + 2,
+          reason: `Invalid correct option '${question.correctOption}'. Must be A, B, C or D.`,
+        });
+
+        return;
+      }
+
+      // Normalize before saving
+      question.correctOption = correctOption;
+
+      validQuestions.push(question);
+    });
+
+    const existingQuestions = await prisma.question.findMany({
+      where: {
+        questionText: {
+          in: validQuestions.map((q) => q.questionText),
+        },
+      },
+      select: {
+        questionText: true,
+      },
+    });
+
+    const existingSet = new Set(
+      existingQuestions.map((q) => q.questionText)
+    );
+
+    const newQuestions = validQuestions.filter(
+      (q) => !existingSet.has(q.questionText)
+    );
+
+    if (newQuestions.length > 0) {
+      await prisma.question.createMany({
+        data: newQuestions,
+        skipDuplicates: true,
+      });
     }
 
-    await prisma.question.create({
-  data: {
-    examType: row.examType,
-    subject: row.subject,
-    topic: row.topic,
-    questionText: row.questionText,
-    questionImage: row.questionImage || null,
-    options: {
-      A: row.optionA,
-      B: row.optionB,
-      C: row.optionC,
-      D: row.optionD,
-    },
-    correctOption: row.correctOption,
-    explanation: row.explanation,
-    explanationImage: row.explanationImage || null,
-  },
-});
+    console.log("================================");
+    console.log(`Imported: ${newQuestions.length}`);
+    console.log(`Duplicates: ${existingQuestions.length}`);
+    console.log(`Failed: ${errors.length}`);
 
-    imported++;
+    if (errors.length) {
+      console.table(errors);
+    }
+
+    console.log("Import completed successfully.");
+  } catch (error) {
+    console.error("================================");
+    console.error("Import failed!");
+    console.error(error.message);
+  } finally {
+    await prisma.$disconnect();
   }
+}
 
-  return {
-    success: true,
-    imported,
-    skipped,
-  };
-};
+importQuestions();
