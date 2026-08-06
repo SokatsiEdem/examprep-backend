@@ -96,3 +96,23 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
     message: "Question deleted successfully.",
   });
 });
+
+export const importQuestions = asyncHandler(async (req, res) => {
+  const result = await questionService.importQuestions(req.file.path);
+
+  res.status(201).json(result);
+});
+
+export const uploadQuestions = asyncHandler(async (req, res) => {
+
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Please upload an Excel file.",
+    });
+  }
+
+  const result = await importQuestions(req.file.path);
+
+  res.status(201).json(result);
+});

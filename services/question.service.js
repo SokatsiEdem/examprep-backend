@@ -1,5 +1,6 @@
 import prisma from "../config/prisma.js";
-
+import XLSX from "xlsx";
+import { parseOptions } from "../utils/excelParser.js";
 /**
  * Fetch all questions with pagination and filters
  */
@@ -107,4 +108,65 @@ export const deleteQuestion = async (id) => {
   return await prisma.question.delete({
     where: { id },
   });
+};
+
+export const importQuestions = async (filePath) => {
+
+  const questions = parseExcel(filePath);
+
+  const validQuestions = [];
+  const errors = [];
+
+  questions.forEach((question, index) => {
+
+    if (
+      !question.questionText ||
+      !question.options.A ||
+      !question.options.B ||
+      !question.options.C ||
+      !question.options.D
+    ) {
+      errors.push({
+        row: index + 2,
+        reason: "Missing required fields",
+      });
+
+      return;
+    }
+
+    validQuestions.push(question);
+  });
+
+  const existing = await prisma.question.findMany({
+    where: {
+      questionText: {
+        in: validQuestions.map((q) => q.questionText),
+      },
+    },
+    select: {
+      questionText: true,
+    },
+  });
+
+  const existingSet = new Set(
+    existing.map((q) => q.questionText)
+  );
+
+  const newQuestions = validQuestions.filter(
+    (q) => !existingSet.has(q.questionText)
+  );
+
+  await prisma.question.createMany({
+    data: newQuestions,
+    skipDuplicates: true,
+  });
+
+  return {
+    success: true,
+    message: "Questions imported successfully.",
+    imported: newQuestions.length,
+    duplicates: existing.length,
+    failed: errors.length,
+    errors,
+  };
 };

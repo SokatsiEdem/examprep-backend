@@ -34,25 +34,30 @@ model User {
   @@map("users")
 }
 model Question {
-  id               String           @id @default(uuid())
-  subject          String
-  topic            String
-  year             Int
-  questionText     String
-  questionImage    String?
-  options          Json
-  correctOption    String
-  explanation      String
-  explanationImage String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
-  examType         ExamType
-  bookmarks        Bookmark[]
-  examAnswers      ExamAnswer[]
-  answers          PracticeAnswer[]
+  id                 String            @id @default(uuid())
 
-  @@index([subject, year])
-  @@index([subject, topic])
+  subject            String
+  questionText       String
+  questionImage      String?
+
+  options            Json
+  correctOption      String
+
+  explanation        String?
+  explanationImage   String?
+  tip                String?
+
+  examType           ExamType
+
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  bookmarks          Bookmark[]
+  examAnswers        ExamAnswer[]
+  answers            PracticeAnswer[]
+
+  @@index([subject])
+  @@index([examType])
   @@map("questions")
 }
 
