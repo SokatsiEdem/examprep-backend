@@ -1,4 +1,4 @@
-import * as questionService from "../services/question.service.js";
+import { importQuestions } from "../services/question.service.js";
 import asyncHandler from "../middleware/asyncHandler.js";
 
 /**
@@ -95,12 +95,6 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
     success: true,
     message: "Question deleted successfully.",
   });
-});
-
-export const importQuestions = asyncHandler(async (req, res) => {
-  const result = await questionService.importQuestions(req.file.path);
-
-  res.status(201).json(result);
 });
 
 // export const uploadQuestions = asyncHandler(async (req, res) => {
