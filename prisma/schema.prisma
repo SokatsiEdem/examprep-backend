@@ -8,57 +8,74 @@ datasource db {
 }
 
 model User {
-  id                         String    @id @default(uuid())
-  fullName                   String
-  email                      String    @unique
-  password                   String
-  role                       String    @default("STUDENT")
-  isVerified                 Boolean   @default(false)
-
-  verificationToken          String?   @unique
-  verificationTokenExpires   DateTime?
-
-  resetPasswordToken         String?   @unique
-  resetPasswordExpires       DateTime?
-
-  refreshToken               String?
-
-  createdAt                  DateTime  @default(now())
-  updatedAt                  DateTime  @updatedAt
-
-  bookmarks                  Bookmark[]
-  exams                      Exam[]
-  practices                  PracticeSession[]
-  settings                   UserSetting?
+  id                       String            @id @default(cuid())
+  fullName                 String
+  email                    String            @unique
+  password                 String
+  role                     String            @default("STUDENT")
+  isVerified               Boolean           @default(false)
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+  resetPasswordToken       String?           @unique
+  verificationToken        String?           @unique
+  resetPasswordExpires     DateTime?
+  verificationTokenExpires DateTime?
+  refreshToken             String?
+  bookmarks                Bookmark[]
+  exams                    Exam[]
+  practices                PracticeSession[]
+  settings                 UserSetting?
+  userSubjects             UserSubject[]
 
   @@map("users")
 }
+
 model Question {
-  id                 String            @id @default(uuid())
+  id               String           @id @default(uuid())
+  questionText     String
+  questionImage    String?
+  options          Json
+  correctOption    String
+  explanation      String?
+  explanationImage String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  examType         ExamType
+  subjectId        String
+  tip              String?
+  bookmarks        Bookmark[]
+  examAnswers      ExamAnswer[]
+  answers          PracticeAnswer[]
+  subject          Subject          @relation(fields: [subjectId], references: [id])
 
-  subject            String
-  questionText       String
-  questionImage      String?
-
-  options            Json
-  correctOption      String
-
-  explanation        String?
-  explanationImage   String?
-  tip                String?
-
-  examType           ExamType
-
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
-
-  bookmarks          Bookmark[]
-  examAnswers        ExamAnswer[]
-  answers            PracticeAnswer[]
-
-  @@index([subject])
+  @@index([subjectId])
   @@index([examType])
   @@map("questions")
+}
+
+model UserSubject {
+  id        String   @id @default(cuid())
+  userId    String
+  subjectId String
+  createdAt DateTime @default(now())
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, subjectId])
+  @@map("user_subjects")
+}
+
+model Subject {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  code         String?       @unique
+  description  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  questions    Question[]
+  userSubjects UserSubject[]
+
+  @@map("subjects")
 }
 
 model PracticeSession {
