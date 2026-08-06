@@ -142,32 +142,12 @@ export const resetPassword = asyncHandler(async (req, res) => {
 export const verifyEmail = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
 
-  const user = await authService.verifyEmail(email, otp);
-
-  const accessToken = generateAccessToken(user);
-  const refreshToken = generateRefreshToken(user);
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: {
-      refreshToken: await bcrypt.hash(refreshToken, 12),
-    },
-  });
+  const result = await authService.verifyEmail(email, otp);
 
   res.status(200).json({
     success: true,
     message: "Email verified successfully.",
-    data: {
-      user: {
-        id: user.id,
-        fullName: user.fullName,
-        email: user.email,
-        role: user.role,
-        isVerified: user.isVerified,
-      },
-      accessToken,
-      refreshToken,
-    },
+    data: result,
   });
 });
 /**
