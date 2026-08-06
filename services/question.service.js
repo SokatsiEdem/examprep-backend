@@ -1,6 +1,6 @@
 import prisma from "../config/prisma.js";
 import XLSX from "xlsx";
-import { parseOptions } from "../utils/excelParser.js";
+import { parseExcel } from "../utils/excelParser.js";
 /**
  * Fetch all questions with pagination and filters
  */
