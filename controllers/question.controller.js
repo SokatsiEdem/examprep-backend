@@ -1,4 +1,4 @@
-import { importQuestions } from "../services/question.service.js";
+import * as questionService from "../services/question.service.js";
 import asyncHandler from "../middleware/asyncHandler.js";
 import { parseExcel } from "../utils/excelParser.js";
 /**
