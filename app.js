@@ -11,6 +11,7 @@ import practiceRoutes from "./routes/practice.routes.js";
 import cbtRoutes from "./routes/cbt.routes.js";
 import bookmarkRoutes from "./routes/bookmark.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
+import subjectRoutes from "./routes/subject.routes.js";
 
 // Middlewares
 import errorHandler from "./middleware/errorHandler.js";
@@ -76,6 +77,7 @@ app.use("/api/practice", practiceRoutes);
 app.use("/api/exams", cbtRoutes);
 app.use("/api/bookmarks", bookmarkRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/subjects", subjectRoutes);
 
 /**
  * ==========================
