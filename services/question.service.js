@@ -1,6 +1,7 @@
 import prisma from "../config/prisma.js";
 import XLSX from "xlsx";
 import { parseExcel } from "../utils/excelParser.js";
+import fs from "fs";
 /**
  * Fetch all questions with pagination and filters
  */
@@ -111,14 +112,12 @@ export const deleteQuestion = async (id) => {
 };
 
 export const importQuestions = async (filePath) => {
- console.log("Service started");
   const questions = parseExcel(filePath);
-  console.log("Questions parsed:", questions.length);
+
   const validQuestions = [];
   const errors = [];
 
   questions.forEach((question, index) => {
-
     if (
       !question.questionText ||
       !question.options.A ||
@@ -160,6 +159,8 @@ export const importQuestions = async (filePath) => {
     data: newQuestions,
     skipDuplicates: true,
   });
+
+  fs.unlinkSync(filePath);
 
   return {
     success: true,

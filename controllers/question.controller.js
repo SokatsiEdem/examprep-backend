@@ -104,13 +104,14 @@ export const deleteQuestion = asyncHandler(async (req, res) => {
 // });
 
 export const uploadQuestions = asyncHandler(async (req, res) => {
-  console.log("Controller reached");
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: "Please upload an Excel file.",
+    });
+  }
 
-  console.log(req.file);
-
-  const result = await importQuestions(req.file.path);
-
-  console.log(result);
+  const result = await questionService.importQuestions(req.file.path);
 
   res.status(201).json(result);
 });
