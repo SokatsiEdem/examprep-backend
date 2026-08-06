@@ -32,11 +32,21 @@ export const forgotPasswordValidator = [
     .normalizeEmail(),
 ];
 
+
 export const resetPasswordValidator = [
-  body("token").notEmpty(),
+  body("token")
+    .notEmpty()
+    .withMessage("Reset token is required.")
+    .isLength({ min: 5, max: 5 })
+    .withMessage("Reset token must be a 5-digit OTP.")
+    .isNumeric()
+    .withMessage("Reset token must contain only numbers."),
 
   body("password")
-    .isLength({ min: 6 }),
+    .notEmpty()
+    .withMessage("Password is required.")
+    .isLength({ min: 6 })
+    .withMessage("Password must be at least 6 characters long."),
 ];
 
 export const changePasswordValidator = [
