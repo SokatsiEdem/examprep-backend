@@ -140,7 +140,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
  * @access Public
  */
 export const verifyEmail = asyncHandler(async (req, res) => {
-  const { email, token } = req.body;
+  const { email, otp } = req.body;
 
   const user = await authService.verifyEmail(email, otp);
 
