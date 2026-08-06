@@ -1,4 +1,4 @@
-import asyncHandler from "../middlewares/asyncHandler.js";
+import asyncHandler from "../middleware/asyncHandler.js";
 import * as subjectService from "../services/subject.service.js";
 
 // Get all available subjects

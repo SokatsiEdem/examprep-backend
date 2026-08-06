@@ -1,5 +1,5 @@
 import { body } from "express-validator";
-import validateRequest from "../middlewares/validateRequest.js";
+import validateRequest from "../middleware/validateRequest.js";
 
 export const validateSelectSubjects = [
   body("subjectIds")
