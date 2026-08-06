@@ -280,13 +280,14 @@ export const forgotPassword = async (email) => {
  * Reset Password
  */
 export const resetPassword = async ({
-  token,
+  email,
+  otp,
   password,
 }) => {
 
   const hashedToken = crypto
   .createHash("sha256")
-  .update(token)
+  .update(otp)
   .digest("hex");
 
 const user = await prisma.user.findFirst({
