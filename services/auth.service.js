@@ -245,9 +245,8 @@ export const forgotPassword = async (email) => {
 
 
   const resetToken = Math.floor(
-    100000 + Math.random() * 900000
+    10000 + Math.random() * 90000
   ).toString();
-
 
   const hashedToken = crypto
     .createHash("sha256")
