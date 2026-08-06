@@ -37,7 +37,7 @@ export const resetPasswordValidator = [
     .isEmail()
     .withMessage("A valid email is required."),
 
-  body("token")
+  body("otp")
     .notEmpty()
     .withMessage("Reset otp is required.")
     .isLength({ min: 5, max: 5 })
