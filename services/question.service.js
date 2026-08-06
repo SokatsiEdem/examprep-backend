@@ -111,9 +111,9 @@ export const deleteQuestion = async (id) => {
 };
 
 export const importQuestions = async (filePath) => {
-
+ console.log("Service started");
   const questions = parseExcel(filePath);
-
+  console.log("Questions parsed:", questions.length);
   const validQuestions = [];
   const errors = [];
 

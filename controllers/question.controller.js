@@ -103,8 +103,20 @@ export const importQuestions = asyncHandler(async (req, res) => {
   res.status(201).json(result);
 });
 
+// export const uploadQuestions = asyncHandler(async (req, res) => {
+//   const result = await importQuestions(req.file.path);
+
+//   res.status(201).json(result);
+// });
+
 export const uploadQuestions = asyncHandler(async (req, res) => {
+  console.log("Controller reached");
+
+  console.log(req.file);
+
   const result = await importQuestions(req.file.path);
+
+  console.log(result);
 
   res.status(201).json(result);
 });
